@@ -1,7 +1,7 @@
 <template>
   <div v-if="!selectedAgent" class="q-pa-sm">No agent selected</div>
-  <div v-else-if="agentPlatform.toLowerCase() !== 'windows'" class="q-pa-sm">
-    Only supported for Windows agents at this time
+  <div v-else-if="agentPlatform.toLowerCase() === 'darwin'" class="q-pa-sm">
+    Not supported for macOS agents at this time
   </div>
   <div v-else>
     <q-table
@@ -36,6 +36,7 @@
           icon="refresh"
         />
         <q-btn
+          v-if="agentPlatform.toLowerCase() === 'windows'"
           icon="add"
           label="Install Software"
           no-caps
