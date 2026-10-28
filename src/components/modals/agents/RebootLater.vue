@@ -19,6 +19,34 @@
           hint="Uses the agent's local time zone"
         />
       </q-card-section>
+      <q-card-section class="q-gutter-sm">
+        <q-toggle
+          v-model="notifyUsers"
+          label="Warn logged on users before rebooting"
+        />
+        <template v-if="notifyUsers">
+          <q-input
+            type="number"
+            dense
+            filled
+            label="Countdown (minutes)"
+            stack-label
+            v-model.number="delayMinutes"
+            :rules="[(v) => (v >= 1 && v <= 1440) || 'Between 1 and 1440']"
+          />
+          <q-input
+            type="textarea"
+            autogrow
+            dense
+            filled
+            label="Message (optional)"
+            stack-label
+            v-model="message"
+            maxlength="512"
+            counter
+          />
+        </template>
+      </q-card-section>
       <q-card-actions align="right">
         <q-btn dense flat push label="Cancel" v-close-popup />
         <q-btn
@@ -58,15 +86,22 @@ export default {
       datetime: formatDateInputField(date.addToDate(Date.now(), { hours: 1 })),
     });
     const loading = ref(false);
+    const notifyUsers = ref(false);
+    const delayMinutes = ref(5);
+    const message = ref("");
 
     async function scheduleReboot() {
       loading.value = true;
 
       try {
-        const ret = await scheduleAgentReboot(
-          props.agent.agent_id,
-          state.value,
-        );
+        const payload = notifyUsers.value
+          ? {
+              ...state.value,
+              delay: delayMinutes.value * 60,
+              message: message.value,
+            }
+          : state.value;
+        const ret = await scheduleAgentReboot(props.agent.agent_id, payload);
         $q.dialog({
           title: "Reboot pending",
           style: "width: 40vw",
@@ -82,6 +117,9 @@ export default {
       // reactive data
       state,
       loading,
+      notifyUsers,
+      delayMinutes,
+      message,
 
       // methods
       scheduleReboot,
