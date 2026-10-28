@@ -1,7 +1,7 @@
 <template>
   <div v-if="!selectedAgent" class="q-pa-sm">No agent selected</div>
-  <div v-else-if="agentPlatform.toLowerCase() !== 'windows'" class="q-pa-sm">
-    Only supported for Windows agents at this time
+  <div v-else-if="agentPlatform.toLowerCase() === 'darwin'" class="q-pa-sm">
+    Not supported for macOS agents at this time
   </div>
   <div v-else>
     <q-table
@@ -21,7 +21,7 @@
       virtual-scroll
       :loading="loading"
       :rows-per-page-options="[0]"
-      no-data-label="No Windows Updates"
+      no-data-label="No Updates"
     >
       <template v-slot:top>
         <q-btn
