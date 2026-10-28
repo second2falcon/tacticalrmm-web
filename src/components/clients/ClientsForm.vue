@@ -28,6 +28,20 @@
           />
         </q-card-section>
 
+        <q-card-section>
+          <div class="text-subtitle1">Remote access privacy (MeshCentral)</div>
+          <MeshConsentEditor
+            v-model="state.mesh_consent_workstation"
+            label="Workstations"
+            off-hint="Not managed by Tactical RMM"
+          />
+          <MeshConsentEditor
+            v-model="state.mesh_consent_server"
+            label="Servers"
+            off-hint="Not managed by Tactical RMM"
+          />
+        </q-card-section>
+
         <div class="q-pl-sm text-h6" v-if="customFields.length > 0">
           Custom Fields
         </div>
@@ -62,12 +76,14 @@ import { notifySuccess } from "@/utils/notify";
 
 // ui imports
 import CustomField from "@/components/ui/CustomField.vue";
+import MeshConsentEditor from "@/components/clients/MeshConsentEditor.vue";
 
 export default {
   name: "ClientsForm",
   emits: [...useDialogPluginComponent.emits],
   components: {
     CustomField,
+    MeshConsentEditor,
   },
   props: {
     client: Object,
@@ -79,7 +95,11 @@ export default {
     // clients form logic
     const state = !!props.client
       ? ref(Object.assign({}, props.client))
-      : ref({ name: "" });
+      : ref({
+          name: "",
+          mesh_consent_workstation: null,
+          mesh_consent_server: null,
+        });
     const site = ref({ name: "" });
     const custom_fields = ref({});
     const customFields = ref([]);
@@ -110,6 +130,8 @@ export default {
     async function getClientCustomFieldValues() {
       loading.value = true;
       const data = await fetchClient(props.client.id);
+      state.value.mesh_consent_workstation = data.mesh_consent_workstation;
+      state.value.mesh_consent_server = data.mesh_consent_server;
 
       for (let field of customFields.value) {
         const value = data.custom_fields.find(
