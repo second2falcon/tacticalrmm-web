@@ -204,6 +204,46 @@
                 </q-item-section>
                 <q-item-section>Reset Check Status</q-item-section>
               </q-item>
+              <q-item clickable :disable="!props.row.check_result.id">
+                <q-item-section side>
+                  <q-icon name="snooze" />
+                </q-item-section>
+                <q-item-section>Snooze</q-item-section>
+                <q-item-section side>
+                  <q-icon name="keyboard_arrow_right" />
+                </q-item-section>
+                <q-menu anchor="top end" self="top start">
+                  <q-list dense style="min-width: 120px">
+                    <q-item
+                      v-for="opt in snoozeOptions"
+                      :key="opt.label"
+                      clickable
+                      v-close-popup
+                      @click="snoozeCheckStatus(props.row, opt.minutes)"
+                    >
+                      <q-item-section>{{ opt.label }}</q-item-section>
+                    </q-item>
+                    <q-item
+                      clickable
+                      v-close-popup
+                      @click="snoozeCheckCustom(props.row)"
+                    >
+                      <q-item-section>Custom...</q-item-section>
+                    </q-item>
+                  </q-list>
+                </q-menu>
+              </q-item>
+              <q-item
+                v-if="props.row.check_result.snoozed_until"
+                clickable
+                v-close-popup
+                @click="removeSnooze(props.row)"
+              >
+                <q-item-section side>
+                  <q-icon name="alarm_off" />
+                </q-item-section>
+                <q-item-section>Remove Snooze</q-item-section>
+              </q-item>
               <q-separator></q-separator>
               <q-item clickable v-close-popup>
                 <q-item-section>Close</q-item-section>
@@ -315,6 +355,17 @@
               name="check_circle"
             >
               <q-tooltip>Passing</q-tooltip>
+            </q-icon>
+            <q-icon
+              v-if="props.row.check_result.snoozed_until"
+              style="font-size: 1.3rem"
+              name="snooze"
+            >
+              <q-tooltip>
+                Snoozed by {{ props.row.check_result.snoozed_by }} until
+                {{ formatDate(props.row.check_result.snoozed_until) }}, or until
+                the check passes on its own
+              </q-tooltip>
             </q-icon>
           </q-td>
           <q-td v-else-if="props.row.check_result.status === 'failing'">
@@ -433,6 +484,8 @@ import {
   updateCheck,
   removeCheck,
   resetCheck,
+  snoozeCheck,
+  unsnoozeCheck,
   resetAllChecksStatus,
   runAgentChecks,
 } from "@/api/checks";
@@ -634,6 +687,56 @@ export default {
       loading.value = false;
     }
 
+    const snoozeOptions = [
+      { label: "1 hour", minutes: 60 },
+      { label: "1 day", minutes: 1440 },
+      { label: "1 week", minutes: 10080 },
+    ];
+
+    async function snoozeCheckStatus(check, minutes) {
+      loading.value = true;
+      try {
+        const result = await snoozeCheck(check.check_result.id, minutes);
+        await getChecks();
+        notifySuccess(result);
+        refreshDashboard(
+          false /* clearTreeSelected */,
+          false /* clearSubTable */,
+        );
+      } catch (e) {
+        console.error(e);
+      }
+      loading.value = false;
+    }
+
+    function snoozeCheckCustom(check) {
+      $q.dialog({
+        title: "Snooze check",
+        message:
+          "Hours to keep this check green (max 90 days). The snooze ends early if the check passes on its own.",
+        prompt: {
+          model: 4,
+          type: "number",
+          isValid: (v) => v > 0 && v <= 2160,
+        },
+        cancel: true,
+      }).onOk((hours) =>
+        snoozeCheckStatus(check, Math.round(Number(hours) * 60)),
+      );
+    }
+
+    async function removeSnooze(check) {
+      loading.value = true;
+      try {
+        const result = await unsnoozeCheck(check.check_result.id);
+        await getChecks();
+        notifySuccess(result);
+      } catch (e) {
+        console.error(e);
+      }
+      loading.value = false;
+    }
+
     function resetAllChecks() {
       $q.dialog({
         title: "Are you sure?",
@@ -747,6 +850,10 @@ export default {
       editCheck,
       deleteCheck,
       resetCheckStatus,
+      snoozeOptions,
+      snoozeCheckStatus,
+      snoozeCheckCustom,
+      removeSnooze,
       truncateText,
       formatDate,
       getAlertSeverity,

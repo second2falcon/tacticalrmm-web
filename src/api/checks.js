@@ -31,6 +31,16 @@ export async function resetCheck(id) {
   return data;
 }
 
+export async function snoozeCheck(id, minutes) {
+  const { data } = await axios.post(`${baseUrl}/${id}/snooze/`, { minutes });
+  return data;
+}
+
+export async function unsnoozeCheck(id) {
+  const { data } = await axios.delete(`${baseUrl}/${id}/snooze/`);
+  return data;
+}
+
 export async function resetAllChecksStatus(agent_id) {
   const { data } = await axios.post(`${baseUrl}/${agent_id}/resetall/`);
   return data;
