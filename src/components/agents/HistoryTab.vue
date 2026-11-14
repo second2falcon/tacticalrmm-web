@@ -45,7 +45,7 @@
             style="cursor: pointer; text-decoration: underline"
             class="text-primary"
             @click="
-              props.row.type === 'cmd_run'
+              ['cmd_run', 'patch_install'].includes(props.row.type)
                 ? showCommandOutput(props.row.command, props.row.results)
                 : showScriptOutput(props.row.script_results)
             "
