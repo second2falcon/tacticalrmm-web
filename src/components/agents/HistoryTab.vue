@@ -45,9 +45,11 @@
             style="cursor: pointer; text-decoration: underline"
             class="text-primary"
             @click="
-              ['cmd_run', 'patch_install'].includes(props.row.type)
-                ? showCommandOutput(props.row.command, props.row.results)
-                : showScriptOutput(props.row.script_results)
+              props.row.type === 'patch_install'
+                ? showPatchInstallOutput(props.row)
+                : props.row.type === 'cmd_run'
+                  ? showCommandOutput(props.row.command, props.row.results)
+                  : showScriptOutput(props.row.script_results)
             "
             >Output
           </span>
@@ -75,6 +77,7 @@ import { fetchAgentHistory } from "@/api/agents";
 import ScriptOutput from "@/components/checks/ScriptOutput.vue";
 import ExportTableBtn from "@/components/ui/ExportTableBtn.vue";
 import PreDialog from "@/components/ui/PreDialog.vue";
+import PatchInstallOutput from "@/components/agents/PatchInstallOutput.vue";
 
 // static data
 const columns = [
@@ -212,6 +215,14 @@ export default {
       });
     }
 
+    // live updating while the install runs, refreshes the table when closed
+    function showPatchInstallOutput(row) {
+      $q.dialog({
+        component: PatchInstallOutput,
+        componentProps: { agentId: selectedAgent.value, entry: row },
+      }).onDismiss(getHistory);
+    }
+
     function showCommandOutput(title, output) {
       $q.dialog({
         component: PreDialog,
@@ -243,6 +254,7 @@ export default {
       // methods
       formatDate,
       showScriptOutput,
+      showPatchInstallOutput,
       showCommandOutput,
       getHistory,
       onRequest,
